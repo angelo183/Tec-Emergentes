@@ -1,0 +1,70 @@
+public class MainActivity extends ActionBarActivity {
+
+private Button btn_acreditar;
+private TextView DxUsuario, MsjAcreditado;
+
+   
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+       
+       this.btn_acreditar = (Button) findViewById(R.id.Boton_Acreditar);
+       this.DxUsuario= (TextView) findViewById(R.id.DatosUsuario);
+       this.MsjAcreditado = (TextView) findViewById(R.id.MensajeAcreditado);
+        btn_acreditar.setOnClickListener(new View.OnClickListener() {
+            
+            public void onClick(View v) {
+IntentIntegrator integrator = new IntentIntegrator(MainActivity.this);
+                integrator.initiateScan();
+            }
+        });
+    }
+
+
+    public void onActivityResullt(int requestCode, int resultCode, Intent intent){
+        final IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
+
+        if(scanResult.getContents() != null){
+            List<NameValuePair> params = new ArrayList<NameValuePair>();
+            String Email = scanResult.getContents().toString();
+            params.add(new BasicNameValuePair("email",Email));
+            Toast.makeText(getApplicationContext(), Email, Toast.LENGTH_LONG).show();
+            consultaBdx(params);
+
+        }else {
+            Toast.makeText(getApplicationContext(), "No se logró escanerar el codigo, por favor intente nuevamente", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public void consultaBdx(List<NameValuePair> params){
+        try {
+            HttpPost httppost = new HttpPost("http://tallerdepoon5-fime.rhcloud.com/AppScript/Acreditar.php");
+            httppost.setEntity(new UrlEncodedFormEntity(params));
+            try {
+                HttpClient httpclient = new DefaultHttpClient();
+                HttpResponse resp = httpclient.execute(httppost);
+
+                JSONObject j = new JSONObject(EntityUtils.toString(resp.getEntity()));
+                String r = j.getString("Rpta");
+                if (r.equals("1")) {
+                    this.DxUsuario.setText(j.getString("Nombre"));
+                    this.MsjAcreditado.setTextColor(Color.parseColor("00AF00"));
+                    this.MsjAcreditado.setText("Usuario Acreditato Correctamente");
+                } else {
+                    this.DxUsuario.setText("");
+                    this.MsjAcreditado.setTextColor(Color.parseColor("#00AF00"));
+                    this.MsjAcreditado.setText("Usuario no Registrado");
+                }
+            } catch (ClientProtocolException e) {
+                Toast.makeText(getApplicationContext(), "error HttpResponse resp = httpclient.execute(httppost);", Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+            } catch (IOException e) {
+                Toast.makeText(getApplicationContext(), "No ha sido posible la conexión al servidor, verifique su conexión a Internet", Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+            } catch (ParseException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        } catch(UnsupportedEncodingException e){
+            Toast.makeText(getApplicationContext(),"error httppost.setEnity(new UrlEncoedFormEntity(params));", Toast.LENGTH_LONG).show();}}}
